@@ -1,0 +1,18 @@
+npx lint-staged
+
+staged=$(git diff --cached --name-only)
+blocked=""
+
+for f in $staged; do
+  case "$f" in
+    CLAUDE.md|SPEC.md|PLAN.md|.claude/*|docs/plans/*|*.pdf)
+      blocked="$blocked$f\n"
+      ;;
+  esac
+done
+
+if [ -n "$blocked" ]; then
+  echo "error: local-only files must not be committed:"
+  printf "$blocked"
+  exit 1
+fi
