@@ -1,16 +1,6 @@
 import { SHOPS, STATUSES } from '../model/schema';
+import { SHOP_LABELS, STATUS_LABELS } from '../lib/format';
 import type { MenuItemStatus, Shop } from '@/types/menu';
-
-const SHOP_LABELS: Record<Shop, string> = {
-  kitchen: 'Кухня',
-  bar: 'Бар',
-  pastry: 'Кондитерская',
-};
-
-const STATUS_LABELS: Record<MenuItemStatus['kind'], string> = {
-  available: 'В продаже',
-  stopped: 'В стоп-листе',
-};
 
 type Props = {
   shop: Shop | undefined;
