@@ -1,8 +1,12 @@
 import { http } from '@/shared/api/http';
 import type { MenuItem, StopItemPayload } from '@/types/menu';
 
-export function fetchMenuItems(signal?: AbortSignal): Promise<MenuItem[]> {
-  return http<MenuItem[]>('/api/menu-items', { signal });
+export function fetchMenuItems(
+  signal?: AbortSignal,
+  debugFail = false,
+): Promise<MenuItem[]> {
+  const path = debugFail ? '/api/menu-items?debug=fail' : '/api/menu-items';
+  return http<MenuItem[]>(path, { signal });
 }
 
 export function stopMenuItem(

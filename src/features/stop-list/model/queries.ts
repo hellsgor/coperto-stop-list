@@ -4,15 +4,19 @@ import type { MenuItem } from '@/types/menu';
 
 export const menuKeys = {
   all: ['menu'] as const,
-  list: () => [...menuKeys.all, 'list'] as const,
+  list: (debugFail?: boolean) =>
+    debugFail
+      ? ([...menuKeys.all, 'list', 'debug-fail'] as const)
+      : ([...menuKeys.all, 'list'] as const),
   stopMutation: () => [...menuKeys.all, 'stop'] as const,
   resumeMutation: () => [...menuKeys.all, 'resume'] as const,
 };
 
-export function menuListQueryOptions() {
+export function menuListQueryOptions(debugFail = false) {
   return queryOptions({
-    queryKey: menuKeys.list(),
-    queryFn: ({ signal }) => fetchMenuItems(signal),
+    queryKey: menuKeys.list(debugFail),
+    queryFn: ({ signal }) => fetchMenuItems(signal, debugFail),
+    ...(debugFail ? { retry: false } : {}),
   });
 }
 
