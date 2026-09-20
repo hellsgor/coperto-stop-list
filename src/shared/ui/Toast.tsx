@@ -14,7 +14,7 @@ export function Toast({ message, onDismiss }: Props) {
         type="button"
         onClick={onDismiss}
         aria-label="Закрыть уведомление"
-        className="text-background/70 hover:text-background"
+        className="text-background/70 hover:text-background active:text-background/50 focus-visible:ring-background focus-visible:ring-offset-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         ✕
       </button>

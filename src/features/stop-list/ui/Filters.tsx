@@ -80,8 +80,8 @@ function FilterButton({ pressed, onClick, children }: FilterButtonProps) {
       onClick={onClick}
       className={
         pressed
-          ? 'bg-accent rounded-full px-3 py-1.5 text-sm text-white'
-          : 'text-foreground rounded-full border border-black/10 px-3 py-1.5 text-sm'
+          ? 'bg-accent hover:bg-accent/90 active:bg-accent/80 focus-visible:ring-accent focus-visible:ring-offset-background cursor-pointer rounded-full px-3 py-1.5 text-sm text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+          : 'text-foreground focus-visible:ring-accent focus-visible:ring-offset-background cursor-pointer rounded-full border border-black/10 px-3 py-1.5 text-sm hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:bg-black/10'
       }
     >
       {children}

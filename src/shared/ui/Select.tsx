@@ -32,7 +32,7 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
         aria-invalid={Boolean(error)}
         aria-describedby={errorId}
         className={cn(
-          'rounded-md border border-black/10 px-3 py-1.5 text-sm',
+          'focus-visible:ring-accent cursor-pointer rounded-md border border-black/10 px-3 py-1.5 text-sm hover:border-black/20 focus-visible:ring-2 focus-visible:outline-none',
           className,
         )}
         {...rest}

@@ -9,8 +9,9 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANT_CLASSES: Record<'primary' | 'secondary', string> = {
-  primary: 'bg-accent text-white',
-  secondary: 'border border-black/10 text-foreground',
+  primary: 'bg-accent text-white hover:bg-accent/90 active:bg-accent/80',
+  secondary:
+    'border border-black/10 text-foreground hover:bg-black/5 active:bg-black/10',
 };
 
 export function Button({
@@ -28,7 +29,7 @@ export function Button({
       disabled={Boolean(disabled) || isLoading}
       aria-busy={isLoading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
+        'focus-visible:ring-accent focus-visible:ring-offset-background inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
         VARIANT_CLASSES[variant],
         className,
       )}

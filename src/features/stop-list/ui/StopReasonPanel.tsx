@@ -197,10 +197,11 @@ export function StopReasonPanel({ item, onClose }: Props) {
               aria-label="Срок стопа"
               className="flex gap-4"
             >
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
                   type="radio"
                   name="until-mode"
+                  className="focus-visible:ring-accent focus-visible:ring-offset-background rounded-full focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                   checked={untilMode === 'shift_end'}
                   onChange={() => {
                     setUntilMode('shift_end');
@@ -212,10 +213,11 @@ export function StopReasonPanel({ item, onClose }: Props) {
                 />
                 До конца смены
               </label>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
                   type="radio"
                   name="until-mode"
+                  className="focus-visible:ring-accent focus-visible:ring-offset-background rounded-full focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                   checked={untilMode === 'custom'}
                   onChange={() => {
                     setUntilMode('custom');
@@ -258,7 +260,7 @@ export function StopReasonPanel({ item, onClose }: Props) {
                       shouldDirty: true,
                     });
                   }}
-                  className="rounded-md border border-black/10 px-3 py-1.5 text-sm"
+                  className="focus-visible:ring-accent rounded-md border border-black/10 px-3 py-1.5 text-sm hover:border-black/20 focus-visible:ring-2 focus-visible:outline-none"
                 />
                 {errors.until && (
                   <p id="until-input-error" className="text-accent text-xs">
