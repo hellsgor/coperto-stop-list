@@ -1,3 +1,7 @@
+'use client';
+
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { cn } from '@/shared/lib/cn';
 import { Badge } from '@/shared/ui/Badge';
 import { Button } from '@/shared/ui/Button';
 import {
@@ -22,6 +26,18 @@ type Props = {
   onResume: (item: MenuItem) => void;
 };
 
+type ScrollShadowState = {
+  isScrollable: boolean;
+  atStart: boolean;
+  atEnd: boolean;
+};
+
+const INITIAL_SCROLL_STATE: ScrollShadowState = {
+  isScrollable: false,
+  atStart: true,
+  atEnd: true,
+};
+
 export function StopListTable({
   items,
   pendingIds,
@@ -29,41 +45,123 @@ export function StopListTable({
   onStop,
   onResume,
 }: Props) {
+  // `containerRef` меряет ширину, доступную таблице БЕЗ учёта bleed-отступа
+  // ниже (сам bleed вешается на `scrollRef`, а не на этот элемент) —
+  // иначе решение «нужен ли bleed» зависело бы от уже применённого bleed
+  // и зацикливалось бы (то влезает, то нет на каждый ререндер).
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Натуральную ширину контента меряем прямо на `<table>`, а не на
+  // обёртке вокруг неё и не через `scrollRef.scrollWidth`: обёртки
+  // переключают классы (`-mx-6`, `w-fit`) в зависимости от `isScrollable`,
+  // поэтому их собственный рендер-размер зависит от предыдущего решения
+  // и может зациклиться. У `<table>` с `whitespace-nowrap` рендер-ширина
+  // всегда равна необходимому минимуму (браузер игнорирует `w-full`,
+  // если контент без переноса требует больше места), независимо от того,
+  // какой класс на ней сейчас стоит — стабильный источник истины.
+  const tableRef = useRef<HTMLTableElement>(null);
+  const [scrollState, setScrollState] = useState(INITIAL_SCROLL_STATE);
+
+  const updateScrollState = useCallback(() => {
+    const container = containerRef.current;
+    const scroller = scrollRef.current;
+    const table = tableRef.current;
+    if (!container || !scroller || !table) return;
+    setScrollState({
+      isScrollable: table.offsetWidth > container.clientWidth + 1,
+      atStart: scroller.scrollLeft <= 0,
+      atEnd:
+        scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 1,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    updateScrollState();
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [updateScrollState, items]);
+
+  const { isScrollable, atStart, atEnd } = scrollState;
+
   return (
-    <div className="overflow-x-auto rounded-lg border border-black/10">
-      <table className="w-full min-w-180 text-left text-sm">
-        <thead>
-          <tr className="text-foreground/60 border-b border-black/10 text-xs">
-            <th scope="col" className="px-4 py-2 font-medium">
-              Название
-            </th>
-            <th scope="col" className="px-4 py-2 font-medium">
-              Цех
-            </th>
-            <th scope="col" className="px-4 py-2 font-medium">
-              Остаток
-            </th>
-            <th scope="col" className="px-4 py-2 font-medium">
-              Статус
-            </th>
-            <th scope="col" className="px-4 py-2 font-medium">
-              Действие
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <StopListRow
-              key={item.id}
-              item={item}
-              isPending={pendingIds.has(item.id)}
-              now={asOf}
-              onStop={onStop}
-              onResume={onResume}
-            />
-          ))}
-        </tbody>
-      </table>
+    <div ref={containerRef}>
+      <div
+        ref={scrollRef}
+        onScroll={updateScrollState}
+        className={cn(
+          'overflow-x-auto',
+          // 24px соответствует `p-6` контейнера страницы в
+          // `StopListView.tsx` — гутер переезжает внутрь скролла (см.
+          // `px-6` ниже), чтобы у истинных краёв скролла было видно
+          // чистый отступ, а между ними — обрезанный контент.
+          isScrollable && '-mx-6',
+          isScrollable && !atStart && 'mask-l-from-85%',
+          isScrollable && !atEnd && 'mask-r-from-85%',
+        )}
+      >
+        <div
+          className={cn(
+            'border-black/10',
+            isScrollable
+              ? // При bleed рамка доходит до истинных краёв экрана —
+                // скруглять там нечего (это уже край экрана, а не
+                // карточка на странице), и вертикальные линии слева/
+                // справа тоже не нужны. Верхняя/нижняя остаются: они
+                // отделяют таблицу от контента над и под ней.
+                //
+                // `w-fit`: обычный блочный `div` по умолчанию
+                // растягивается на ширину родителя, а не на ширину
+                // своего содержимого — без этого класса рамка
+                // обрезалась бы по видимой области скролла, а `table`
+                // внутри просто вылезала бы за неё без видимой границы.
+                'w-fit border-y px-6'
+              : 'rounded-lg border',
+          )}
+        >
+          <table
+            ref={tableRef}
+            className={cn(
+              'text-left text-sm whitespace-nowrap',
+              !isScrollable && 'w-full',
+            )}
+          >
+            <thead>
+              <tr className="text-foreground/60 border-b border-black/10 text-xs">
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Название
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Цех
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Остаток
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Статус
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Действие
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <StopListRow
+                  key={item.id}
+                  item={item}
+                  isPending={pendingIds.has(item.id)}
+                  now={asOf}
+                  onStop={onStop}
+                  onResume={onResume}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -85,8 +183,8 @@ function StopListRow({ item, isPending, now, onStop, onResume }: RowProps) {
     <tr
       className={
         isStopped
-          ? 'text-foreground/70 border-b border-black/5 bg-black/2 last:border-b-0'
-          : 'border-b border-black/5 last:border-b-0'
+          ? 'text-foreground/70 border-b border-black/5 bg-black/2 transition-colors duration-300 last:border-b-0 motion-reduce:transition-none'
+          : 'border-b border-black/5 transition-colors duration-300 last:border-b-0 motion-reduce:transition-none'
       }
     >
       <td className="px-4 py-3">{item.title}</td>

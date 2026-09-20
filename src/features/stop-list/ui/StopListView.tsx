@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence } from 'motion/react';
 import { Button } from '@/shared/ui/Button';
 import { usePendingItemIds } from '../model/use-pending-item-ids';
 import { useResumeItem } from '../model/use-resume-item';
@@ -77,13 +78,15 @@ export function StopListView() {
           onStop={(item) => openPanel(item.id)}
         />
       )}
-      {panelItem && (
-        <StopReasonPanel
-          key={panelItem.id}
-          item={panelItem}
-          onClose={closePanel}
-        />
-      )}
+      <AnimatePresence>
+        {panelItem && (
+          <StopReasonPanel
+            key={panelItem.id}
+            item={panelItem}
+            onClose={closePanel}
+          />
+        )}
+      </AnimatePresence>
       <ToastViewport />
     </div>
   );

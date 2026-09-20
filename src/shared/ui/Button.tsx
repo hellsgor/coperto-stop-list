@@ -9,9 +9,10 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANT_CLASSES: Record<'primary' | 'secondary', string> = {
-  primary: 'bg-accent text-white hover:bg-accent/90 active:bg-accent/80',
+  primary:
+    'bg-accent text-white not-disabled:hover:bg-accent/90 not-disabled:active:bg-accent/80',
   secondary:
-    'border border-black/10 text-foreground hover:bg-black/5 active:bg-black/10',
+    'border border-black/10 text-foreground not-disabled:hover:bg-black/5 not-disabled:active:bg-black/10',
 };
 
 export function Button({

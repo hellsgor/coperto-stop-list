@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motion, useIsPresent } from 'motion/react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/shared/ui/Button';
 import { Select } from '@/shared/ui/Select';
@@ -85,13 +86,63 @@ export function StopReasonPanel({ item, onClose }: Props) {
 
   const stopMutation = useStopItem();
   const panelRef = useRef<HTMLDivElement>(null);
+  const isPresent = useIsPresent();
+  const isPresentRef = useRef(isPresent);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  // Оживление той же панели (тот же `key`) до конца её exit-анимации: тогда
+  // `isPresent` вернётся в `true`, а основной эффект ниже не перезапустится
+  // (его deps не изменились) — нужно самим вернуть фокус в диалог.
+  const wasExitingRef = useRef(false);
 
   useEffect(() => {
-    const previouslyFocused =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+    isPresentRef.current = isPresent;
+  }, [isPresent]);
+
+  // Как только начинается exit-анимация (панель ещё в DOM, но уже не
+  // `isPresent`), сразу возвращаем фокус на кнопку строки, не дожидаясь
+  // отложенного unmount по завершении анимации (~200мс).
+  useEffect(() => {
+    if (!isPresent) {
+      wasExitingRef.current = true;
+      const panel = panelRef.current;
+      const active = document.activeElement;
+      const focusStillInPanel =
+        active === null ||
+        active === document.body ||
+        (active instanceof HTMLElement && panel?.contains(active) === true);
+      // Пока панель исчезает, пользователь мог успеть перевести фокус
+      // на другую строку (например, открыть другую панель) — в этом
+      // случае не отбираем фокус обратно.
+      if (!focusStillInPanel) return;
+
+      const previouslyFocused = previouslyFocusedRef.current;
+      if (previouslyFocused?.isConnected) {
+        previouslyFocused.focus();
+      } else {
+        document
+          .querySelector<HTMLElement>(`[data-row-action="${item.id}"]`)
+          ?.focus();
+      }
+      return;
+    }
+
+    if (wasExitingRef.current) {
+      wasExitingRef.current = false;
+      panelRef.current?.focus();
+    }
+  }, [isPresent, item.id]);
+
+  useEffect(() => {
     const panel = panelRef.current;
+    const active = document.activeElement;
+    // В dev React StrictMode этот эффект вызывается дважды: на втором
+    // проходе фокус уже внутри самой панели (после `panel.focus()` из
+    // первого прохода), и запоминать его как «фокус до открытия» нельзя —
+    // иначе при закрытии фокус вернулся бы не на кнопку строки, а на уже
+    // размонтированную панель.
+    if (active instanceof HTMLElement && !panel?.contains(active)) {
+      previouslyFocusedRef.current = active;
+    }
     // Фокусируем сам контейнер диалога, а не первое поле формы: в dev
     // React StrictMode дважды вызывает этот эффект, и фокус на `<select>`
     // с последующим немедленным blur (при повторном вызове) уже успевал
@@ -99,6 +150,8 @@ export function StopReasonPanel({ item, onClose }: Props) {
     panel?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
+      if (!isPresentRef.current) return;
+
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
@@ -141,19 +194,14 @@ export function StopReasonPanel({ item, onClose }: Props) {
     }
 
     document.addEventListener('keydown', handleKeyDown);
+    // Возврат фокуса при закрытии выполняет отдельный эффект по переходу
+    // `isPresent -> false` (см. выше) — он срабатывает сразу, как только
+    // начинается exit-анимация, а не здесь: `AnimatePresence` откладывает
+    // реальный unmount (и, соответственно, вызов этого cleanup) до конца
+    // анимации (~200мс), и повторный `.focus()` здесь перебивал бы фокус,
+    // который пользователь мог успеть перевести куда-то ещё за это время.
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      // Кнопка, с которой открыли панель, могла успеть отсоединиться от
-      // DOM (оптимистичный апдейт меняет набор кнопок в строке) —
-      // `focus()` на отсоединённом узле no-op. Возвращаемся на неё же по
-      // стабильному атрибуту, если ссылка протухла.
-      if (previouslyFocused?.isConnected) {
-        previouslyFocused.focus();
-      } else {
-        document
-          .querySelector<HTMLElement>(`[data-row-action="${item.id}"]`)
-          ?.focus();
-      }
     };
   }, [onClose, item.id]);
 
@@ -165,16 +213,25 @@ export function StopReasonPanel({ item, onClose }: Props) {
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+      style={{ pointerEvents: isPresent ? 'auto' : 'none' }}
+      onClick={isPresent ? onClose : undefined}
     >
-      <div
+      <motion.div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="stop-reason-panel-title"
         tabIndex={-1}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.98 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className="bg-background flex w-full max-w-md flex-col gap-4 rounded-lg p-6 shadow-xl outline-none"
         onClick={(event) => event.stopPropagation()}
       >
@@ -279,7 +336,7 @@ export function StopReasonPanel({ item, onClose }: Props) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
