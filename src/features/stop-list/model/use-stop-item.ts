@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { stopMenuItem } from '../api/menu-api';
+import { REASON_LABELS } from '../lib/format';
 import { getCachedMenuItem, menuKeys, patchMenuItem } from './queries';
 import { useUiStore } from './ui-store';
 import type { MenuItem, StopItemPayload } from '@/types/menu';
@@ -43,8 +44,19 @@ export function useStopItem() {
       }
       useUiStore.getState().pushToast(error.message);
     },
-    onSuccess: (updatedItem) => {
+    onSuccess: (updatedItem, _variables, context) => {
       patchMenuItem(queryClient, updatedItem.id, () => updatedItem);
+      if (updatedItem.status.kind === 'stopped') {
+        const wasStopped = context?.previousItem?.status.kind === 'stopped';
+        const reasonLabel = REASON_LABELS[updatedItem.status.reason];
+        useUiStore
+          .getState()
+          .pushToast(
+            wasStopped
+              ? `Стоп позиции «${updatedItem.title}» обновлён: ${reasonLabel}.`
+              : `Позиция «${updatedItem.title}» поставлена в стоп-лист: ${reasonLabel}.`,
+          );
+      }
     },
     onSettled: () => {
       if (queryClient.isMutating({ mutationKey: menuKeys.all }) === 1) {

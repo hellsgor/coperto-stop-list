@@ -40,6 +40,9 @@ export function useResumeItem() {
     },
     onSuccess: (updatedItem) => {
       patchMenuItem(queryClient, updatedItem.id, () => updatedItem);
+      useUiStore
+        .getState()
+        .pushToast(`Позиция «${updatedItem.title}» возвращена в продажу.`);
     },
     onSettled: () => {
       if (queryClient.isMutating({ mutationKey: menuKeys.all }) === 1) {
