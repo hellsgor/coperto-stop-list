@@ -31,7 +31,7 @@ export function StopListTable({
 }: Props) {
   return (
     <div className="overflow-x-auto rounded-lg border border-black/10">
-      <table className="w-full min-w-180 text-left text-sm">
+      <table className="w-full min-w-180 text-left text-sm whitespace-nowrap">
         <thead>
           <tr className="text-foreground/60 border-b border-black/10 text-xs">
             <th scope="col" className="px-4 py-2 font-medium">
