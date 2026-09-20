@@ -85,8 +85,8 @@ function StopListRow({ item, isPending, now, onStop, onResume }: RowProps) {
     <tr
       className={
         isStopped
-          ? 'text-foreground/70 border-b border-black/5 bg-black/2 last:border-b-0'
-          : 'border-b border-black/5 last:border-b-0'
+          ? 'text-foreground/70 border-b border-black/5 bg-black/2 transition-colors duration-300 last:border-b-0 motion-reduce:transition-none'
+          : 'border-b border-black/5 transition-colors duration-300 last:border-b-0 motion-reduce:transition-none'
       }
     >
       <td className="px-4 py-3">{item.title}</td>
