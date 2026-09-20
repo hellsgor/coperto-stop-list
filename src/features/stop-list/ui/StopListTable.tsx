@@ -112,14 +112,24 @@ function StopListRow({ item, isPending, now, onStop, onResume }: RowProps) {
       <td className="px-4 py-3">
         {isStopped ? (
           <div className="flex flex-col gap-1">
-            <Button
-              variant="secondary"
-              isLoading={isPending}
-              disabled={isPending || isOutOfStock}
-              onClick={() => onResume(item)}
-            >
-              Вернуть в продажу
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                disabled={isPending}
+                onClick={() => onStop(item)}
+                data-row-action={item.id}
+              >
+                Изменить
+              </Button>
+              <Button
+                variant="secondary"
+                isLoading={isPending}
+                disabled={isPending || isOutOfStock}
+                onClick={() => onResume(item)}
+              >
+                Вернуть в продажу
+              </Button>
+            </div>
             {isOutOfStock && (
               <span className="text-foreground/70 text-xs">
                 Остаток 0 — нельзя вернуть в продажу
@@ -132,6 +142,7 @@ function StopListRow({ item, isPending, now, onStop, onResume }: RowProps) {
             isLoading={isPending}
             disabled={isPending}
             onClick={() => onStop(item)}
+            data-row-action={item.id}
           >
             Поставить в стоп
           </Button>
