@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { resumeMenuItem } from '../api/menu-api';
 import { getCachedMenuItem, menuKeys, patchMenuItem } from './queries';
+import { useUiStore } from './ui-store';
 import type { MenuItem } from '@/types/menu';
 
 type ResumeItemVariables = {
@@ -30,11 +31,12 @@ export function useResumeItem() {
 
       return { previousItem };
     },
-    onError: (_error, { id }, context) => {
+    onError: (error, { id }, context) => {
       const previousItem = context?.previousItem;
       if (previousItem) {
         patchMenuItem(queryClient, id, () => previousItem);
       }
+      useUiStore.getState().pushToast(error.message);
     },
     onSuccess: (updatedItem) => {
       patchMenuItem(queryClient, updatedItem.id, () => updatedItem);

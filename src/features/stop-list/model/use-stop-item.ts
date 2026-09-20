@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { stopMenuItem } from '../api/menu-api';
 import { getCachedMenuItem, menuKeys, patchMenuItem } from './queries';
+import { useUiStore } from './ui-store';
 import type { MenuItem, StopItemPayload } from '@/types/menu';
 
 type StopItemVariables = {
@@ -35,11 +36,12 @@ export function useStopItem() {
 
       return { previousItem };
     },
-    onError: (_error, { id }, context) => {
+    onError: (error, { id }, context) => {
       const previousItem = context?.previousItem;
       if (previousItem) {
         patchMenuItem(queryClient, id, () => previousItem);
       }
+      useUiStore.getState().pushToast(error.message);
     },
     onSuccess: (updatedItem) => {
       patchMenuItem(queryClient, updatedItem.id, () => updatedItem);

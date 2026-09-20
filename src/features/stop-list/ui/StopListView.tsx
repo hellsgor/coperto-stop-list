@@ -1,13 +1,18 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/shared/ui/Button';
 import { usePendingItemIds } from '../model/use-pending-item-ids';
 import { useResumeItem } from '../model/use-resume-item';
 import { useFilters } from '../model/use-filters';
 import { useMenuList } from '../model/use-menu-list';
+import { getCachedMenuItem } from '../model/queries';
+import { useUiStore } from '../model/ui-store';
 import { Filters } from './Filters';
 import { MenuListLoading } from './MenuListLoading';
 import { StopListTable } from './StopListTable';
+import { StopReasonPanel } from './StopReasonPanel';
+import { ToastViewport } from './ToastViewport';
 
 export function StopListView() {
   const { filters, setFilter } = useFilters();
@@ -22,6 +27,20 @@ export function StopListView() {
   } = useMenuList(filters);
   const pendingIds = usePendingItemIds();
   const resumeMutation = useResumeItem();
+  const queryClient = useQueryClient();
+  const panelItemId = useUiStore((state) => state.panelItemId);
+  const openPanel = useUiStore((state) => state.openPanel);
+  const closePanel = useUiStore((state) => state.closePanel);
+  // Ищем позицию в полном кэше, а не в отфильтрованном `items`: пока
+  // мутация в полёте, оптимистичное изменение статуса может вывести
+  // позицию за пределы текущего фильтра, и панель не должна из-за этого
+  // размонтироваться раньше, чем придёт ответ сервера. Панель использует
+  // из `item` только `id`/`title` для заголовка — остальные поля формы
+  // фиксируются в ней самой один раз при монтировании, так что здесь
+  // достаточно значения на момент рендера, без отдельной подписки.
+  const panelItem = panelItemId
+    ? getCachedMenuItem(queryClient, panelItemId)
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -55,9 +74,17 @@ export function StopListView() {
           pendingIds={pendingIds}
           asOf={dataUpdatedAt}
           onResume={(item) => resumeMutation.mutate({ id: item.id })}
-          onStop={() => {}}
+          onStop={(item) => openPanel(item.id)}
         />
       )}
+      {panelItem && (
+        <StopReasonPanel
+          key={panelItem.id}
+          item={panelItem}
+          onClose={closePanel}
+        />
+      )}
+      <ToastViewport />
     </div>
   );
 }
